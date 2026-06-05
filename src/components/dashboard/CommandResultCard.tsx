@@ -1,12 +1,19 @@
-import { Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { IconVolume } from '@tabler/icons-react'
+import { useState } from 'react'
+import { speak } from '../../api/voiceApi'
 import type { ProcessCommandResponse } from '../../types/voice'
+import { playBase64Audio, playBlobAudio } from '../../utils/audio'
 import { formatNullable } from '../../utils/display'
 import { JsonView } from '../common/JsonView'
 import { StatusBadge } from '../common/StatusBadge'
 
+export type CommandResultSource = 'text' | 'voice'
+
 interface CommandResultCardProps {
-  submittedText: string
   result: ProcessCommandResponse
+  source: CommandResultSource
+  submittedText?: string
 }
 
 function resolveDeviceCode(result: ProcessCommandResponse): string | null {
@@ -35,13 +42,48 @@ function parseStateJson(value: string | null): unknown {
 }
 
 export function CommandResultCard({
-  submittedText,
   result,
+  source,
+  submittedText,
 }: CommandResultCardProps) {
-  const recognizedText = result.recognizedText ?? result.rawText ?? submittedText
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [isReplaying, setIsReplaying] = useState(false)
+
+  const recognizedText =
+    result.recognizedText ?? result.rawText ?? submittedText ?? null
   const deviceCode = resolveDeviceCode(result)
   const deviceStateJson = resolveDeviceStateJson(result)
   const parsedState = parseStateJson(deviceStateJson)
+  const hasSpeechAudio = Boolean(result.audioBase64?.trim())
+
+  const handleSpeakResponse = async () => {
+    if (!result.message.trim()) {
+      return
+    }
+
+    setIsSpeaking(true)
+
+    try {
+      const blob = await speak(result.message)
+      await playBlobAudio(blob)
+    } finally {
+      setIsSpeaking(false)
+    }
+  }
+
+  const handleReplaySpeech = async () => {
+    if (!result.audioBase64?.trim()) {
+      return
+    }
+
+    setIsReplaying(true)
+
+    try {
+      await playBase64Audio(result.audioBase64, result.audioContentType)
+    } finally {
+      setIsReplaying(false)
+    }
+  }
 
   return (
     <Card withBorder padding="lg" radius="md">
@@ -52,12 +94,14 @@ export function CommandResultCard({
         </Group>
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <Stack gap={4}>
-            <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-              Введений текст
-            </Text>
-            <Text size="sm">{submittedText}</Text>
-          </Stack>
+          {source === 'text' && submittedText ? (
+            <Stack gap={4}>
+              <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                Введений текст
+              </Text>
+              <Text size="sm">{submittedText}</Text>
+            </Stack>
+          ) : null}
 
           <Stack gap={4}>
             <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
@@ -114,6 +158,31 @@ export function CommandResultCard({
             <JsonView data={parsedState} maxHeight={200} />
           </Stack>
         ) : null}
+
+        <Group>
+          {source === 'text' ? (
+            <Button
+              variant="light"
+              leftSection={<IconVolume size={16} />}
+              onClick={() => void handleSpeakResponse()}
+              loading={isSpeaking}
+              disabled={!result.message.trim()}
+            >
+              Озвучити відповідь
+            </Button>
+          ) : null}
+
+          {source === 'voice' && hasSpeechAudio ? (
+            <Button
+              variant="light"
+              leftSection={<IconVolume size={16} />}
+              onClick={() => void handleReplaySpeech()}
+              loading={isReplaying}
+            >
+              Відтворити голосову відповідь
+            </Button>
+          ) : null}
+        </Group>
       </Stack>
     </Card>
   )

@@ -3,6 +3,7 @@ export type {
   ProcessTextCommandRequest,
   ProcessCommandDevice,
   ProcessCommandResponse,
+  ProcessWithSpeechResponse,
   ResolveCommandRequest,
   ResolveCommandResponse,
   SpeakRequest,

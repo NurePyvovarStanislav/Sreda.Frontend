@@ -17,7 +17,6 @@ export interface ProcessCommandDevice {
 
 export interface ProcessCommandResponse {
   commandId?: EntityId | null
-  userId?: EntityId | null
   rawText?: string | null
   recognizedText?: string | null
   commandCode?: string | null
@@ -29,8 +28,12 @@ export interface ProcessCommandResponse {
   deviceStateJson?: string | null
   audioBase64?: string | null
   audioContentType?: string | null
+  userId?: EntityId | null
   device?: ProcessCommandDevice | null
 }
+
+/** Відповідь POST /api/voice/process-with-speech */
+export type ProcessWithSpeechResponse = ProcessCommandResponse
 
 export interface ResolveCommandRequest {
   text: string

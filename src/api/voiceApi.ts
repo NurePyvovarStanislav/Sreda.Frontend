@@ -3,6 +3,7 @@ import type {
   EntityId,
   ProcessCommandResponse,
   ProcessTextCommandRequest,
+  ProcessWithSpeechResponse,
   ResolveCommandRequest,
   ResolveCommandResponse,
   SpeakRequest,
@@ -42,6 +43,27 @@ export async function processAudio(
 
   const { data } = await apiClient.post<ProcessCommandResponse>(
     '/api/voice/process',
+    formData,
+    {
+      params: queryUserId != null ? { userId: queryUserId } : undefined,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  )
+
+  return data
+}
+
+export async function processAudioWithSpeech(
+  file: File | Blob,
+  userId?: EntityId | null,
+): Promise<ProcessWithSpeechResponse> {
+  const formData = new FormData()
+  formData.append('audio', file)
+
+  const queryUserId = toQueryUserId(userId)
+
+  const { data } = await apiClient.post<ProcessWithSpeechResponse>(
+    '/api/voice/process-with-speech',
     formData,
     {
       params: queryUserId != null ? { userId: queryUserId } : undefined,
