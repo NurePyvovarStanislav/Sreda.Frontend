@@ -1,47 +1,88 @@
-import { Card, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Card, SimpleGrid, Stack } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { processText } from '../api/voiceApi'
 import { PageHeader } from '../components/common/PageHeader'
-
-const overviewCards = [
-  {
-    title: 'Команди',
-    description: 'Текстові та голосові команди для керування середовищем.',
-  },
-  {
-    title: 'Пристрої',
-    description: 'Стан підключених пристроїв та результат виконання дій.',
-  },
-  {
-    title: 'Події',
-    description: 'Журнал системних подій і відповідей API.',
-  },
-]
+import { CommandResultCard } from '../components/dashboard/CommandResultCard'
+import { CommandsOverview } from '../components/dashboard/CommandsOverview'
+import { DevicesOverview } from '../components/dashboard/DevicesOverview'
+import { EventsOverview } from '../components/dashboard/EventsOverview'
+import { TextCommandPanel } from '../components/dashboard/TextCommandPanel'
+import type { ProcessCommandResponse } from '../types/voice'
+import { normalizeStatusKey } from '../utils/display'
 
 export function DashboardPage() {
+  const queryClient = useQueryClient()
+  const [submittedText, setSubmittedText] = useState('')
+  const [commandResult, setCommandResult] =
+    useState<ProcessCommandResponse | null>(null)
+
+  const commandMutation = useMutation({
+    mutationFn: (text: string) => processText({ text }),
+    onSuccess: (result, text) => {
+      setSubmittedText(text)
+      setCommandResult(result)
+
+      void queryClient.invalidateQueries({ queryKey: ['devices'] })
+      void queryClient.invalidateQueries({ queryKey: ['events'] })
+      void queryClient.invalidateQueries({ queryKey: ['commands'] })
+
+      const statusKey = normalizeStatusKey(result.status)
+
+      if (statusKey === 'success') {
+        notifications.show({
+          title: 'Команда виконана',
+          message: result.message,
+          color: 'green',
+        })
+        return
+      }
+
+      if (statusKey === 'failed' || statusKey === 'rejected') {
+        notifications.show({
+          title: 'Команда не виконана',
+          message: result.message,
+          color: statusKey === 'failed' ? 'red' : 'orange',
+        })
+        return
+      }
+
+      notifications.show({
+        title: 'Відповідь системи',
+        message: result.message,
+        color: 'blue',
+      })
+    },
+  })
+
   return (
     <Stack gap="lg">
       <PageHeader
         title="Головна панель"
-        description="Огляд системи Sreda: команди, пристрої та події в одному місці."
+        description="Введіть текстову команду та перегляньте результат у системі Sreda в реальному часі."
       />
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-        {overviewCards.map((card) => (
-          <Card key={card.title} withBorder padding="lg" radius="md">
-            <Stack gap="xs">
-              <Text fw={600}>{card.title}</Text>
-              <Text size="sm" c="dimmed">
-                {card.description}
-              </Text>
-            </Stack>
-          </Card>
-        ))}
-      </SimpleGrid>
-
       <Card withBorder padding="lg" radius="md">
-        <Text size="sm" c="dimmed">
-          Ця сторінка буде показувати зведену статистику після підключення API.
-        </Text>
+        <TextCommandPanel
+          onSubmit={(text) => commandMutation.mutate(text)}
+          isLoading={commandMutation.isPending}
+        />
       </Card>
+
+      {commandResult ? (
+        <CommandResultCard
+          submittedText={submittedText}
+          result={commandResult}
+        />
+      ) : null}
+
+      <DevicesOverview />
+
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
+        <EventsOverview />
+        <CommandsOverview />
+      </SimpleGrid>
     </Stack>
   )
 }

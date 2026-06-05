@@ -1,24 +1,41 @@
 import { Badge } from '@mantine/core'
-
-type StatusVariant = 'success' | 'warning' | 'error' | 'info' | 'neutral'
+import { formatCommandStatus, normalizeStatusKey } from '../../utils/display'
 
 interface StatusBadgeProps {
-  status: string
-  variant?: StatusVariant
+  status: string | number
 }
 
-const variantColors: Record<StatusVariant, string> = {
-  success: 'green',
-  warning: 'yellow',
-  error: 'red',
-  info: 'blue',
-  neutral: 'gray',
+function resolveStatusColor(status: string | number): string {
+  const key = normalizeStatusKey(status)
+
+  switch (key) {
+    case 'success':
+      return 'green'
+    case 'failed':
+      return 'red'
+    case 'rejected':
+      return 'orange'
+    case 'unknown':
+      return 'gray'
+    case 'pending':
+      return 'blue'
+    default:
+      return 'gray'
+  }
 }
 
-export function StatusBadge({ status, variant = 'neutral' }: StatusBadgeProps) {
+function formatStatusLabel(status: string | number): string {
+  if (typeof status === 'string' && Number.isNaN(Number(status))) {
+    return status
+  }
+
+  return formatCommandStatus(status)
+}
+
+export function StatusBadge({ status }: StatusBadgeProps) {
   return (
-    <Badge variant="light" color={variantColors[variant]} radius="sm">
-      {status}
+    <Badge variant="light" color={resolveStatusColor(status)} radius="sm">
+      {formatStatusLabel(status)}
     </Badge>
   )
 }
