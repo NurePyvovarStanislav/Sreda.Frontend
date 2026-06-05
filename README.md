@@ -1,73 +1,147 @@
-# React + TypeScript + Vite
+# Sreda.Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Демонстраційна веб-панель для системи **Sreda**: текстові та голосові команди, керування пристроями, перегляд подій і CRUD-адмінка для користувачів, команд та фраз.
 
-Currently, two official plugins are available:
+Інтерфейс — **українською мовою**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Можливості
 
-## React Compiler
+- **Dashboard** — текстові та голосові команди, результат виконання, TTS, огляд пристроїв/подій/історії
+- **Пристрої** — перегляд, створення, редагування, видалення, оновлення стану
+- **Події** — журнал системних подій з фільтрами
+- **Історія команд** — розпізнані команди з фільтрами
+- **Користувачі** — CRUD
+- **Каталог команд** — CRUD для available commands
+- **Фрази команд** — зіставлення фраз з командами (CRUD)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Стек
 
-## Expanding the ESLint configuration
+| Технологія | Призначення |
+|------------|-------------|
+| React 19 + TypeScript | UI |
+| Vite | збірка та dev-сервер |
+| Mantine UI | компоненти, темна тема |
+| TanStack Query | запити та мутації |
+| Axios | HTTP-клієнт |
+| React Router | маршрутизація |
+| Tabler Icons | іконки |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Вимоги
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 20+
+- npm
+- Запущений backend **Sreda.Backend** (за замовчуванням `https://localhost:7186`)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Швидкий старт
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# 1. Встановити залежності
+npm install
+
+# 2. Налаштувати змінні середовища
+cp .env.example .env
+
+# 3. Запустити dev-сервер
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+За замовчуванням Vite відкриває `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Змінні середовища
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Змінна | Опис | За замовчуванням |
+|--------|------|------------------|
+| `VITE_API_BASE_URL` | Base URL backend API | `https://localhost:7186` |
+
+Приклад — файл `.env.example`:
+
+```env
+VITE_API_BASE_URL=https://localhost:7186
 ```
+
+## Скрипти
+
+| Команда | Опис |
+|---------|------|
+| `npm run dev` | Dev-сервер з HMR |
+| `npm run build` | TypeScript + production build |
+| `npm run preview` | Перегляд production-збірки |
+| `npm run lint` | ESLint |
+
+## Маршрути
+
+| Шлях | Сторінка |
+|------|----------|
+| `/` | Головна панель (Dashboard) |
+| `/devices` | Пристрої |
+| `/events` | Події |
+| `/commands` | Історія команд |
+| `/users` | Користувачі |
+| `/available-commands` | Каталог команд |
+| `/command-phrases` | Фрази команд |
+
+## Структура проєкту
+
+```
+src/
+  api/              # HTTP-клієнти (axios)
+  components/
+    common/         # PageHeader, LoadingState, ErrorState, FormSwitch, …
+    dashboard/      # Dashboard-компоненти
+    layout/         # AppShell, Navbar
+    users/          # Форми користувачів
+    devices/        # Форми пристроїв
+    availableCommands/
+    commandPhrases/
+  pages/            # Сторінки маршрутів
+  types/            # TypeScript-типи DTO
+  utils/            # display, form, audio, mantine helpers
+  App.tsx
+  main.tsx
+```
+
+## API
+
+Базовий клієнт: `src/api/client.ts`  
+Помилки HTTP обробляються глобальним interceptor і показуються через Mantine Notifications.
+
+Основні модулі:
+
+| Модуль | Endpoint-и |
+|--------|------------|
+| `voiceApi` | `/api/voice/process-text`, `/api/voice/process-with-speech`, `/api/voice/speak`, … |
+| `devicesApi` | `/api/devices`, `/api/devices/{id}/state` |
+| `eventsApi` | `/api/events` |
+| `commandsApi` | `/api/commands` |
+| `usersApi` | `/api/users` |
+| `availableCommandsApi` | `/api/available-commands` |
+| `commandPhrasesApi` | `/api/command-phrases` |
+
+### Голосові команди
+
+- **Повний цикл (STT → команда → TTS):** `POST /api/voice/process-with-speech` — повертає `audioBase64`
+- **Окрема озвучка тексту:** `POST /api/voice/speak` — повертає `audio/wav` (Blob)
+
+## Архітектура UI
+
+```
+Текст / голос
+      ↓
+  voiceApi → Sreda.Backend
+      ↓
+  Dashboard (результат + notifications)
+      ↓
+  invalidation queries: devices, events, commands
+```
+
+CRUD-сторінки використовують `useQuery` / `useMutation` з invalidation відповідних query keys після успішних мутацій.
+
+## Пов’язані репозиторії
+
+- **Sreda.Backend** — ASP.NET Core API, MediatR, voice pipeline, CRUD endpoints
+
+## Примітки для розробки
+
+- React 19: значення з `event.currentTarget` потрібно читати **синхронно** в обробнику, до callback `setState` (див. `FormSwitch`, `src/utils/form.ts`)
+- `Select` у модалках використовує `comboboxProps={{ withinPortal: false }}` (`src/utils/mantine.ts`)
+- Backend має бути доступний до запуску frontend, інакше сторінки покажуть повідомлення про недоступність API
