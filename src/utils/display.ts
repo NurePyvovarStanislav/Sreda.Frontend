@@ -130,3 +130,119 @@ export function isConnectionError(error: unknown): boolean {
 
 export const API_CONNECTION_ERROR_MESSAGE =
   'Не вдалося підключитися до API Sreda. Перевірте, чи запущено backend.'
+
+export function matchesSearch(value: string, query: string): boolean {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (!normalizedQuery) {
+    return true
+  }
+
+  return value.toLowerCase().includes(normalizedQuery)
+}
+
+export function sortByCreatedAtDesc<T extends { createdAt: string }>(
+  items: T[],
+): T[] {
+  return [...items].sort(
+    (left, right) =>
+      new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+  )
+}
+
+export const eventTypeFilterOptions = Object.entries(eventTypeLabels).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+)
+
+export const commandStatusFilterOptions = Object.entries(commandStatusLabels).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+)
+
+const accessLevelLabels: Record<number, string> = {
+  0: 'Guest',
+  1: 'User',
+  2: 'Trusted',
+  3: 'Admin',
+}
+
+export const accessLevelOptions = Object.entries(accessLevelLabels).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+)
+
+export function formatAccessLevel(level: string | number): string {
+  if (typeof level === 'number') {
+    return accessLevelLabels[level] ?? String(level)
+  }
+
+  const parsed = Number(level)
+  if (Number.isFinite(parsed) && accessLevelLabels[parsed]) {
+    return accessLevelLabels[parsed]
+  }
+
+  return level
+}
+
+export const deviceTypeOptions = Object.entries(deviceTypeLabels).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+)
+
+const commandCategoryLabels: Record<number, string> = {
+  0: 'System',
+  1: 'Information',
+  2: 'Device',
+  3: 'Media',
+  4: 'Security',
+  5: 'Automation',
+}
+
+export const commandCategoryOptions = Object.entries(commandCategoryLabels).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+)
+
+export function formatCommandCategory(category: string | number): string {
+  if (typeof category === 'number') {
+    return commandCategoryLabels[category] ?? String(category)
+  }
+
+  const parsed = Number(category)
+  if (Number.isFinite(parsed) && commandCategoryLabels[parsed]) {
+    return commandCategoryLabels[parsed]
+  }
+
+  return category
+}
+
+export const phraseLanguageOptions = [
+  { value: 'uk', label: 'Українська (uk)' },
+  { value: 'ru', label: 'Російська (ru)' },
+  { value: 'en', label: 'English (en)' },
+]
+
+export function buildAvailableCommandSelectOptions(
+  commands: { id: string | number; code: string; name: string }[],
+) {
+  return commands.map((command) => ({
+    value: String(command.id),
+    label: `${command.code} — ${command.name}`,
+  }))
+}
+
+export function findAvailableCommandById<
+  T extends { id: string | number; code: string; name: string },
+>(commands: T[] | undefined, id: string | number): T | undefined {
+  return commands?.find((command) => String(command.id) === String(id))
+}
